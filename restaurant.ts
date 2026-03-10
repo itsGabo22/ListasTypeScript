@@ -4,215 +4,117 @@ __license__ = "GPL"
 __version__ = "1.0.0"
 __email__ = "gabriel.pazg@campusucc.edu.com"
 */
+/** Taller Listas: flujo restaurante (Cliente, Mesero, Cocina, Caja). Toda la lógica con listas. */
 
-/**
- * Taller Listas - Diagrama de procesos: Orden en un restaurante
- * Actores: Cliente, Mozo, Cocina, Caja
- * Implementación con listas (arreglos) para el estado de los pedidos.
- */
+type OrderStatus = "requested" | "in_kitchen" | "ready" | "served" | "billing" | "completed";
 
-// ============ Tipos y estados ============
-
-/** Estados posibles de un pedido en el flujo */
-type OrderStatus =
-  | "requested"    // Cliente solicitó (pendiente para mozo)
-  | "in_kitchen"   // En cocina (elaborando)
-  | "ready"        // Listo para servir
-  | "served"       // Servido al cliente
-  | "billing"      // Cuenta solicitada
-  | "completed";   // Pagado, fin del ciclo
-
-/** Interfaz de un pedido */
 interface Order {
   id: string;
   items: string[];
+  customerName: string;
   status: OrderStatus;
-  total?: number; // Calculado por caja al pedir la cuenta
+  total?: number;
   createdAt: Date;
 }
 
-// ============ Clase principal: flujo del restaurante con listas ============
+// Precios COP por palabra clave en el ítem
+const PRECIOS_COP: Record<string, number> = {
+  hamburguesa: 18000, papas: 8000, gaseosa: 4500, jugo: 5000, pizza: 22000,
+  perro: 12000, ensalada: 14000, café: 3500, agua: 2500, postre: 9000, sopa: 11000
+};
+const DEFAULT_COP = 12000;
 
+function precioItem(nombre: string): number {
+  const k = nombre.toLowerCase();
+  for (const [p, v] of Object.entries(PRECIOS_COP)) if (k.includes(p)) return v;
+  return DEFAULT_COP;
+}
+
+function totalPedido(items: string[]): number {
+  return items.reduce((s, i) => s + precioItem(i), 0);
+}
+
+function formatCOP(n: number): string {
+  return Math.round(n).toLocaleString("es-CO");
+}
+
+// Clase con listas para cada etapa del flujo (add, search, update, delete entre listas)
 class RestaurantFlow {
-  // Listas que representan el estado de los pedidos en cada etapa del proceso
-  private pendingOrders: Order[] = [];   // Pedidos recogidos por el mozo, enviados a cocina/caja
-  private kitchenOrders: Order[] = [];   // Pedidos en elaboración en cocina
-  private readyOrders: Order[] = [];     // Pedidos listos para servir
-  private servedOrders: Order[] = [];    // Pedidos ya servidos al cliente
-  private billingOrders: Order[] = [];   // Pedidos con cuenta solicitada
-  private completedOrders: Order[] = []; // Pedidos pagados (ciclo completado)
+  private pending: Order[] = [];
+  private kitchen: Order[] = [];
+  private ready: Order[] = [];
+  private served: Order[] = [];
+  private billing: Order[] = [];
+  private completed: Order[] = [];
+  private cajaRegistro: { id: string; customerName: string }[] = [];
 
-  // ---------- Operaciones básicas de listas ----------
-
-  /** Agregar un pedido a una lista (add) */
-  private addToList(list: Order[], order: Order): void {
-    list.push(order);
+  private add(list: Order[], o: Order): void { list.push(o); }
+  private find(list: Order[], id: string): number { return list.findIndex(o => o.id === id); }
+  private move(from: Order[], to: Order[], id: string, update: Partial<Order>): boolean {
+    const i = this.find(from, id);
+    if (i === -1) return false;
+    const o = { ...from[i], ...update };
+    from.splice(i, 1);
+    this.add(to, o);
+    return true;
   }
 
-  /** Buscar un pedido por id en una lista (search). Retorna índice o -1 */
-  private searchInList(list: Order[], orderId: string): number {
-    return list.findIndex((o) => o.id === orderId);
+  requestOrder(id: string, items: string[], customerName = ""): Order {
+    const o: Order = { id, items: items.map(s => s.trim()), customerName: customerName.trim() || "—", status: "requested", createdAt: new Date() };
+    this.add(this.pending, o);
+    return o;
   }
 
-  /** Buscar pedido por id en cualquier lista; retorna el pedido y la lista donde está */
-  searchOrder(orderId: string): { order: Order; listName: string } | null {
-    const lists: { name: string; arr: Order[] }[] = [
-      { name: "pendingOrders", arr: this.pendingOrders },
-      { name: "kitchenOrders", arr: this.kitchenOrders },
-      { name: "readyOrders", arr: this.readyOrders },
-      { name: "servedOrders", arr: this.servedOrders },
-      { name: "billingOrders", arr: this.billingOrders },
-      { name: "completedOrders", arr: this.completedOrders },
-    ];
-    for (const { name, arr } of lists) {
-      const idx = this.searchInList(arr, orderId);
-      if (idx !== -1) return { order: arr[idx], listName: name };
+  nextStep(orderId: string): boolean {
+    const stages: Order[][] = [this.pending, this.kitchen, this.ready, this.served, this.billing];
+    const next: Order[][] = [this.kitchen, this.ready, this.served, this.billing, this.completed];
+    for (let i = 0; i < stages.length; i++) {
+      const idx = this.find(stages[i], orderId);
+      if (idx === -1) continue;
+      const order = stages[i][idx];
+      if (i === 0) {
+        const ok = this.move(this.pending, this.kitchen, orderId, { status: "in_kitchen" });
+        if (ok) this.cajaRegistro.push({ id: order.id, customerName: order.customerName });
+        return ok;
+      }
+      if (i === 3) return this.move(this.served, this.billing, orderId, { status: "billing", total: totalPedido(order.items) });
+      return this.move(stages[i], next[i], orderId, { status: next[i] === this.ready ? "ready" : next[i] === this.served ? "served" : "completed" });
     }
-    return null;
+    return false;
   }
 
-  /** Actualizar estado de un pedido y moverlo de lista (update: remove de una, add en otra) */
-  private moveOrder(
-    fromList: Order[],
-    toList: Order[],
-    orderId: string,
-    updateStatus: OrderStatus,
-    extra?: Partial<Order>
-  ): boolean {
-    const idx = this.searchInList(fromList, orderId);
-    if (idx === -1) return false;
-    const order = fromList[idx];
-    fromList.splice(idx, 1); // Eliminar de la lista origen
-    const updated: Order = { ...order, status: updateStatus, ...extra };
-    this.addToList(toList, updated); // Agregar a la lista destino
-    return true;
+  getNextAction(stage: string): string {
+    const t: Record<string, string> = { pending: "Derivar a Cocina y Caja", kitchen: "Elaborar pedido", ready: "Servir al cliente", served: "Pedir cuenta", billing: "Pagar" };
+    return t[stage] || "";
   }
 
-  /** Eliminar/completar: quitar de una lista (p. ej. al finalizar). Aquí "completar" es mover a completedOrders. */
-  private removeFromList(list: Order[], orderId: string): Order | null {
-    const idx = this.searchInList(list, orderId);
-    if (idx === -1) return null;
-    const [order] = list.splice(idx, 1);
-    return order;
-  }
-
-  // ---------- Flujo del proceso (según diagrama) ----------
-
-  /** 1. Cliente solicita el pedido → se crea y queda en cola para el mozo (lista interna: requested) */
-  requestOrder(orderId: string, items: string[]): Order {
-    const order: Order = {
-      id: orderId,
-      items: [...items],
-      status: "requested",
-      createdAt: new Date(),
-    };
-    // El mozo "recoge" el pedido: lo agregamos a pendientes (mozo envía a cocina y caja)
-    this.addToList(this.pendingOrders, order);
-    return order;
-  }
-
-  /** 2. Mozo recoge el pedido y lo envía a cocina y a caja */
-  waiterPickUpAndSend(orderId: string): boolean {
-    const idx = this.searchInList(this.pendingOrders, orderId);
-    if (idx === -1) return false;
-    const order = this.pendingOrders[idx];
-    this.pendingOrders.splice(idx, 1);
-    const toKitchen: Order = { ...order, status: "in_kitchen" };
-    this.addToList(this.kitchenOrders, toKitchen);
-    // Caja también recibe el pedido (se registra para después calcular total)
-    return true;
-  }
-
-  /** 3. Cocina elabora el pedido → cambio de estado en la lista */
-  kitchenPrepareOrder(orderId: string): boolean {
-    return this.moveOrder(this.kitchenOrders, this.readyOrders, orderId, "ready");
-  }
-
-  /** 4. Mozo sirve el pedido */
-  waiterServeOrder(orderId: string): boolean {
-    return this.moveOrder(this.readyOrders, this.servedOrders, orderId, "served");
-  }
-
-  /** 5a. Cliente pide la cuenta → Mozo pide cuenta → Caja calcula total */
-  requestBill(orderId: string, total: number): boolean {
-    const idx = this.searchInList(this.servedOrders, orderId);
-    if (idx === -1) return false;
-    const order = this.servedOrders[idx];
-    this.servedOrders.splice(idx, 1);
-    const forBilling: Order = { ...order, status: "billing", total };
-    this.addToList(this.billingOrders, forBilling);
-    return true;
-  }
-
-  /** 5b. Cliente paga → se completa el ciclo (delete/process: sale de billing, entra a completed) */
-  payOrder(orderId: string): boolean {
-    const order = this.removeFromList(this.billingOrders, orderId);
-    if (!order) return false;
-    const completed: Order = { ...order, status: "completed" };
-    this.addToList(this.completedOrders, completed);
-    return true;
-  }
-
-  // ---------- Utilidad: resumen de listas para consola ----------
-
-  getSummary(): {
-    pending: number;
-    kitchen: number;
-    ready: number;
-    served: number;
-    billing: number;
-    completed: number;
+  getState(): {
+    lists: Record<string, Order[]>;
+    cajaPorCobrar: { id: string; customerName: string }[];
+    completed: Order[];
+    totalCobrado: number;
+    formatCOP: (n: number) => string;
+    getNextAction: (stage: string) => string;
   } {
+    const completedIds = new Set(this.completed.map(o => o.id));
     return {
-      pending: this.pendingOrders.length,
-      kitchen: this.kitchenOrders.length,
-      ready: this.readyOrders.length,
-      served: this.servedOrders.length,
-      billing: this.billingOrders.length,
-      completed: this.completedOrders.length,
+      lists: { pending: this.pending, kitchen: this.kitchen, ready: this.ready, served: this.served, billing: this.billing, completed: this.completed },
+      cajaPorCobrar: this.cajaRegistro.filter(r => !completedIds.has(r.id)),
+      completed: this.completed,
+      totalCobrado: this.completed.reduce((s, o) => s + (o.total ?? 0), 0),
+      formatCOP,
+      getNextAction: this.getNextAction.bind(this)
     };
-  }
-
-  getCompletedOrders(): Order[] {
-    return [...this.completedOrders];
   }
 }
 
-// ============ Ejemplo de uso en consola ============
-
 const flow = new RestaurantFlow();
 
-// 1. Cliente solicita el pedido
-flow.requestOrder("ORD-001", ["Hamburguesa", "Papas fritas", "Gaseosa"]);
-console.log("--- Después de solicitar pedido ---");
-console.log(flow.getSummary());
-
-// 2. Mozo recoge y envía a cocina y caja
-flow.waiterPickUpAndSend("ORD-001");
-console.log("\n--- Después de que el mozo envía a cocina/caja ---");
-console.log(flow.getSummary());
-
-// 3. Cocina elabora el pedido
-flow.kitchenPrepareOrder("ORD-001");
-console.log("\n--- Después de que cocina elabora ---");
-console.log(flow.getSummary());
-
-// 4. Mozo sirve el pedido
-flow.waiterServeOrder("ORD-001");
-console.log("\n--- Después de servir al cliente ---");
-console.log(flow.getSummary());
-
-// 5. Cliente pide cuenta; caja calcula total; cliente paga
-flow.requestBill("ORD-001", 25.5);
-console.log("\n--- Después de pedir cuenta (total calculado) ---");
-console.log(flow.getSummary());
-
-flow.payOrder("ORD-001");
-console.log("\n--- Después de pagar (ciclo completado) ---");
-console.log(flow.getSummary());
-console.log("Pedidos completados:", flow.getCompletedOrders());
-
-// Prueba de búsqueda
-const found = flow.searchOrder("ORD-001");
-console.log("\n--- Búsqueda de ORD-001 (debe estar en completedOrders) ---");
-console.log(found);
+// Browser: exponer API para el HTML (en Node no existe window)
+if (typeof (globalThis as any).window !== "undefined") {
+  (globalThis as any).RestaurantApp = {
+    addOrder: (id: string, items: string[], name: string) => flow.requestOrder(id, items, name),
+    nextStep: (id: string) => flow.nextStep(id),
+    getState: () => flow.getState()
+  };
+}

@@ -8,385 +8,94 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #1a1614;
-      --surface: #252019;
-      --card: #2d2620;
-      --cream: #f5efe6;
-      --amber: #e8a838;
-      --amber-dim: #b8860b;
-      --green: #4a7c59;
-      --red: #c45c4a;
-      --radius: 12px;
-      --shadow: 0 8px 24px rgba(0,0,0,0.4);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Outfit', sans-serif;
-      background: var(--bg);
-      color: var(--cream);
-      min-height: 100vh;
-      padding: 2rem;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 2.5rem;
-    }
-    header h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: var(--amber);
-      letter-spacing: 0.02em;
-    }
-    header p {
-      color: rgba(245,239,230,0.7);
-      font-size: 0.95rem;
-      margin-top: 0.35rem;
-    }
-
-    .add-order {
-      max-width: 420px;
-      margin: 0 auto 2rem;
-      background: var(--surface);
-      padding: 1.25rem 1.5rem;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(232,168,56,0.15);
-    }
-    .add-order h2 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--amber);
-      margin-bottom: 0.75rem;
-    }
-    .add-order input {
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      border-radius: 8px;
-      border: 1px solid rgba(245,239,230,0.2);
-      background: var(--card);
-      color: var(--cream);
-      font-family: inherit;
-      font-size: 0.9rem;
-      margin-bottom: 0.5rem;
-    }
-    .add-order input::placeholder {
-      color: rgba(245,239,230,0.4);
-    }
-    .add-order button {
-      width: 100%;
-      padding: 0.65rem;
-      border: none;
-      border-radius: 8px;
-      background: var(--amber);
-      color: var(--bg);
-      font-family: inherit;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-    }
-    .add-order button:hover {
-      background: var(--amber-dim);
-      transform: translateY(-1px);
-    }
-
-    .pipeline {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 1rem;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-    @media (max-width: 1100px) {
-      .pipeline { grid-template-columns: repeat(3, 1fr); }
-    }
-    @media (max-width: 600px) {
-      .pipeline { grid-template-columns: 1fr; }
-    }
-
-    .column {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 1rem;
-      min-height: 180px;
-      border: 1px solid rgba(245,239,230,0.08);
-      box-shadow: var(--shadow);
-    }
-    .column h3 {
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: rgba(245,239,230,0.6);
-      margin-bottom: 0.75rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid rgba(245,239,230,0.1);
-    }
-    .column.pending h3 { color: #c9a227; }
-    .column.kitchen h3 { color: #d4734a; }
-    .column.ready h3 { color: #5a9e6e; }
-    .column.served h3 { color: #6b9bd1; }
-    .column.billing h3 { color: #b88ac9; }
-    .column.completed h3 { color: #7eb89a; }
-
-    .order-card {
-      background: var(--card);
-      border-radius: 8px;
-      padding: 0.75rem;
-      margin-bottom: 0.6rem;
-      border-left: 3px solid var(--amber);
-      font-size: 0.85rem;
-    }
-    .order-card .id {
-      font-weight: 600;
-      color: var(--amber);
-      margin-bottom: 0.25rem;
-    }
-    .order-card .items {
-      color: rgba(245,239,230,0.85);
-      font-size: 0.8rem;
-    }
-    .order-card .total {
-      margin-top: 0.35rem;
-      font-weight: 600;
-      color: var(--green);
-    }
-    .order-card button {
-      margin-top: 0.5rem;
-      width: 100%;
-      padding: 0.4rem;
-      border: none;
-      border-radius: 6px;
-      background: rgba(232,168,56,0.25);
-      color: var(--amber);
-      font-family: inherit;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .order-card button:hover {
-      background: rgba(232,168,56,0.4);
-    }
-    .column.completed .order-card button {
-      display: none;
-    }
-
-    .empty-msg {
-      font-size: 0.8rem;
-      color: rgba(245,239,230,0.35);
-      font-style: italic;
-      padding: 0.5rem 0;
-    }
-
-    /* Caja de restaurante (esquina) */
-    .caja-restaurante {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      width: 260px;
-      max-height: 70vh;
-      background: var(--surface);
-      border: 1px solid rgba(74, 124, 89, 0.4);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 1rem;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .caja-restaurante h3 {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--green);
-      margin-bottom: 0.75rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid rgba(74, 124, 89, 0.3);
-    }
-    .caja-restaurante .caja-list {
-      overflow-y: auto;
-      flex: 1;
-      margin-bottom: 0.75rem;
-    }
-    .caja-restaurante .caja-item {
-      font-size: 0.8rem;
-      padding: 0.4rem 0;
-      border-bottom: 1px solid rgba(245,239,230,0.06);
-      color: rgba(245,239,230,0.9);
-    }
+    :root { --bg: #1a1614; --surface: #252019; --card: #2d2620; --cream: #f5efe6; --amber: #e8a838; --amber-dim: #b8860b; --green: #4a7c59; --radius: 12px; --shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--cream); min-height: 100vh; padding: 2rem; }
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header h1 { font-size: 1.75rem; font-weight: 700; color: var(--amber); }
+    header p { color: rgba(245,239,230,0.7); font-size: 0.95rem; margin-top: 0.35rem; }
+    .add-order { max-width: 420px; margin: 0 auto 2rem; background: var(--surface); padding: 1.25rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid rgba(232,168,56,0.15); }
+    .add-order h2 { font-size: 0.9rem; font-weight: 600; color: var(--amber); margin-bottom: 0.75rem; }
+    .add-order input { width: 100%; padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px solid rgba(245,239,230,0.2); background: var(--card); color: var(--cream); font-family: inherit; font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .add-order button { width: 100%; padding: 0.65rem; border: none; border-radius: 8px; background: var(--amber); color: var(--bg); font-family: inherit; font-weight: 600; cursor: pointer; }
+    .add-order button:hover { background: var(--amber-dim); }
+    .pipeline { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; max-width: 1400px; margin: 0 auto; }
+    @media (max-width: 1100px) { .pipeline { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 600px) { .pipeline { grid-template-columns: 1fr; } }
+    .column { background: var(--surface); border-radius: var(--radius); padding: 1rem; min-height: 180px; border: 1px solid rgba(245,239,230,0.08); box-shadow: var(--shadow); }
+    .column h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(245,239,230,0.6); margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(245,239,230,0.1); }
+    .column.pending h3 { color: #c9a227; } .column.kitchen h3 { color: #d4734a; } .column.ready h3 { color: #5a9e6e; } .column.served h3 { color: #6b9bd1; } .column.billing h3 { color: #b88ac9; } .column.completed h3 { color: #7eb89a; }
+    .order-card { background: var(--card); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.6rem; border-left: 3px solid var(--amber); font-size: 0.85rem; }
+    .order-card .id { font-weight: 600; color: var(--amber); margin-bottom: 0.25rem; }
+    .order-card .items { color: rgba(245,239,230,0.85); font-size: 0.8rem; }
+    .order-card .total { margin-top: 0.35rem; font-weight: 600; color: var(--green); }
+    .order-card button { margin-top: 0.5rem; width: 100%; padding: 0.4rem; border: none; border-radius: 6px; background: rgba(232,168,56,0.25); color: var(--amber); font-family: inherit; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+    .order-card button:hover { background: rgba(232,168,56,0.4); }
+    .column.completed .order-card button { display: none; }
+    .empty-msg { font-size: 0.8rem; color: rgba(245,239,230,0.35); font-style: italic; padding: 0.5rem 0; }
+    .caja-restaurante { position: fixed; top: 1rem; right: 1rem; width: 260px; max-height: 70vh; background: var(--surface); border: 1px solid rgba(74, 124, 89, 0.4); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1rem; overflow: hidden; display: flex; flex-direction: column; }
+    .caja-restaurante h3 { font-size: 0.85rem; font-weight: 700; color: var(--green); margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(74, 124, 89, 0.3); }
+    .caja-restaurante .caja-registro { font-size: 0.75rem; color: rgba(245,239,230,0.6); margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(74, 124, 89, 0.25); }
+    .caja-restaurante .caja-list { overflow-y: auto; flex: 1; margin-bottom: 0.75rem; }
+    .caja-restaurante .caja-item { font-size: 0.8rem; padding: 0.4rem 0; border-bottom: 1px solid rgba(245,239,230,0.06); }
     .caja-restaurante .caja-item .name { color: var(--amber); font-weight: 600; }
     .caja-restaurante .caja-item .total { color: var(--green); }
-    .caja-restaurante .caja-total {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--green);
-      padding-top: 0.5rem;
-      border-top: 2px solid rgba(74, 124, 89, 0.5);
-    }
+    .caja-restaurante .caja-total { font-size: 1.1rem; font-weight: 700; color: var(--green); padding-top: 0.5rem; border-top: 2px solid rgba(74, 124, 89, 0.5); }
   </style>
 </head>
 <body>
   <header>
     <h1>Flujo de orden en restaurante</h1>
-    <p>Taller Listas · Cliente → Mozo → Cocina → Caja</p>
+    <p>Cliente → Mesero (deriva Cocina + Caja) → Cocina elabora → Mesero sirve → Caja calcula → Cliente paga</p>
   </header>
-
-  <!-- Caja de restaurante: completados y total -->
   <aside class="caja-restaurante">
     <h3>Caja del restaurante</h3>
+    <div class="caja-registro" id="cajaRegistro">Registradas (por cobrar): —</div>
     <div class="caja-list" id="cajaList"></div>
-    <div class="caja-total" id="cajaTotal">Total: $0 COP</div>
+    <div class="caja-total" id="cajaTotal">Total cobrado: $0 COP</div>
   </aside>
-
   <section class="add-order">
-    <h2>Nuevo pedido (Cliente solicita)</h2>
+    <h2>1. Solicitud inicial — Cliente solicita el pedido</h2>
     <input type="text" id="orderName" placeholder="Nombre del cliente">
     <input type="text" id="orderId" placeholder="ID del pedido (ej. ORD-001)">
-    <input type="text" id="orderItems" placeholder="Items separados por coma (ej. Hamburguesa, Papas, Gaseosa)">
+    <input type="text" id="orderItems" placeholder="Items separados por coma">
     <button type="button" id="btnAdd">Agregar pedido</button>
   </section>
-
   <div class="pipeline">
-    <div class="column pending" data-stage="pending">
-      <h3>Pendientes</h3>
-      <div class="cards"></div>
-    </div>
-    <div class="column kitchen" data-stage="kitchen">
-      <h3>En cocina</h3>
-      <div class="cards"></div>
-    </div>
-    <div class="column ready" data-stage="ready">
-      <h3>Listos</h3>
-      <div class="cards"></div>
-    </div>
-    <div class="column served" data-stage="served">
-      <h3>Servidos</h3>
-      <div class="cards"></div>
-    </div>
-    <div class="column billing" data-stage="billing">
-      <h3>Cuenta</h3>
-      <div class="cards"></div>
-    </div>
-    <div class="column completed" data-stage="completed">
-      <h3>Completados</h3>
-      <div class="cards"></div>
-    </div>
+    <div class="column pending" data-stage="pending"><h3>2. Pendientes (Mesero recibe)</h3><div class="cards"></div></div>
+    <div class="column kitchen" data-stage="kitchen"><h3>3. En cocina (Cocina elabora)</h3><div class="cards"></div></div>
+    <div class="column ready" data-stage="ready"><h3>4. Listos (Mesero sirve)</h3><div class="cards"></div></div>
+    <div class="column served" data-stage="served"><h3>5a. Servidos (Cliente pide cuenta)</h3><div class="cards"></div></div>
+    <div class="column billing" data-stage="billing"><h3>5b. Cuenta (Caja calcula total)</h3><div class="cards"></div></div>
+    <div class="column completed" data-stage="completed"><h3>5c. Completados (Cliente pagó)</h3><div class="cards"></div></div>
   </div>
-
+  <script src="restaurant.js"></script>
   <script>
-    // Réplica del flujo con listas (mismo modelo que restaurant.ts)
-    const lists = {
-      pending: [],
-      kitchen: [],
-      ready: [],
-      served: [],
-      billing: [],
-      completed: []
-    };
-
-    function addOrder(id, items, customerName = '') {
-      const order = { id, items: items.map(s => s.trim()), customerName: customerName.trim() || '—', status: 'requested', createdAt: new Date() };
-      lists.pending.push(order);
-      return order;
-    }
-
-    function moveOrder(fromKey, toKey, orderId, update = {}) {
-      const from = lists[fromKey];
-      const idx = from.findIndex(o => o.id === orderId);
-      if (idx === -1) return false;
-      const order = Object.assign({}, from[idx], update);
-      from.splice(idx, 1);
-      lists[toKey].push(order);
-      return true;
-    }
-
-    function nextStep(orderId) {
-      for (const [key, arr] of Object.entries(lists)) {
-        const idx = arr.findIndex(o => o.id === orderId);
-        if (idx === -1) continue;
-        const order = arr[idx];
-        if (key === 'pending') return moveOrder('pending', 'kitchen', orderId, { status: 'in_kitchen' });
-        if (key === 'kitchen') return moveOrder('kitchen', 'ready', orderId, { status: 'ready' });
-        if (key === 'ready') return moveOrder('ready', 'served', orderId, { status: 'served' });
-        if (key === 'served') {
-          const total = (order.items.length * 8.5).toFixed(2);
-          return moveOrder('served', 'billing', orderId, { status: 'billing', total: parseFloat(total) });
-        }
-        if (key === 'billing') return moveOrder('billing', 'completed', orderId, { status: 'completed' });
-        return false;
-      }
-      return false;
-    }
-
-    function getNextAction(stage) {
-      const t = { pending: 'Enviar a cocina', kitchen: 'Elaborar', ready: 'Servir', served: 'Pedir cuenta', billing: 'Pagar' };
-      return t[stage] || '';
-    }
-
+    var app = window.RestaurantApp;
     function render() {
-      const stages = ['pending', 'kitchen', 'ready', 'served', 'billing', 'completed'];
-      stages.forEach(stage => {
-        const col = document.querySelector(`.column[data-stage="${stage}"] .cards`);
-        col.innerHTML = '';
-        const arr = lists[stage];
-        if (arr.length === 0) {
-          col.innerHTML = '<div class="empty-msg">Sin pedidos</div>';
-          return;
-        }
-        arr.forEach(order => {
-          const card = document.createElement('div');
-          card.className = 'order-card';
-          card.innerHTML = `
-            <div class="id">${order.id} ${order.customerName ? `· ${order.customerName}` : ''}</div>
-            <div class="items">${order.items.join(', ')}</div>
-            ${order.total != null ? `<div class="total">$ ${order.total.toFixed(2)} COP</div>` : ''}
-            ${stage !== 'completed' ? `<button data-id="${order.id}" data-stage="${stage}">${getNextAction(stage)}</button>` : ''}
-          `;
-          col.appendChild(card);
-        });
+      var s = app.getState(), stages = ['pending','kitchen','ready','served','billing','completed'];
+      stages.forEach(function(stage) {
+        var col = document.querySelector('.column[data-stage="' + stage + '"] .cards');
+        var arr = s.lists[stage];
+        col.innerHTML = arr.length === 0 ? '<div class="empty-msg">Sin pedidos</div>' : arr.map(function(o) {
+          return '<div class="order-card"><div class="id">' + o.id + ' · ' + o.customerName + '</div><div class="items">' + o.items.join(', ') + '</div>' +
+            (o.total != null ? '<div class="total">$ ' + s.formatCOP(o.total) + ' COP</div>' : '') +
+            (stage !== 'completed' ? '<button data-id="' + o.id + '">' + s.getNextAction(stage) + '</button>' : '') + '</div>';
+        }).join('');
       });
-
-      // Actualizar caja: listado de completados y total
-      const cajaList = document.getElementById('cajaList');
-      const cajaTotal = document.getElementById('cajaTotal');
-      const completed = lists.completed;
-      const totalSum = completed.reduce((s, o) => s + (o.total || 0), 0);
-      cajaList.innerHTML = completed.length === 0
-        ? '<div class="empty-msg">Sin cobros</div>'
-        : completed.map(o => `<div class="caja-item"><span class="name">${o.customerName || '—'}</span> ${o.id} · <span class="total">$ ${(o.total || 0).toFixed(2)} COP</span></div>`).join('');
-      cajaTotal.textContent = `Total: $ ${totalSum.toFixed(2)} COP`;
-
-      document.querySelectorAll('.order-card button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          nextStep(btn.dataset.id);
-          render();
-        });
-      });
+      document.getElementById('cajaRegistro').textContent = s.cajaPorCobrar.length === 0 ? 'Registradas (por cobrar): —' : 'Registradas (por cobrar): ' + s.cajaPorCobrar.map(function(r){ return r.id + ' (' + r.customerName + ')'; }).join(', ');
+      document.getElementById('cajaList').innerHTML = s.completed.length === 0 ? '<div class="empty-msg">Sin cobros</div>' : s.completed.map(function(o){ return '<div class="caja-item"><span class="name">' + o.customerName + '</span> ' + o.id + ' · <span class="total">$ ' + s.formatCOP(o.total || 0) + ' COP</span></div>'; }).join('');
+      document.getElementById('cajaTotal').textContent = 'Total cobrado: $ ' + s.formatCOP(s.totalCobrado) + ' COP';
+      document.querySelectorAll('.order-card button').forEach(function(btn){ btn.onclick = function(){ app.nextStep(btn.dataset.id); render(); }; });
     }
-
-    document.getElementById('btnAdd').addEventListener('click', () => {
-      const name = document.getElementById('orderName').value.trim();
-      const id = document.getElementById('orderId').value.trim();
-      const raw = document.getElementById('orderItems').value.trim();
+    document.getElementById('btnAdd').onclick = function() {
+      var name = document.getElementById('orderName').value.trim(), id = document.getElementById('orderId').value.trim(), raw = document.getElementById('orderItems').value.trim();
       if (!id || !raw) return;
-      const items = raw.split(',').filter(s => s.trim());
-      addOrder(id, items, name);
-      document.getElementById('orderName').value = '';
-      document.getElementById('orderId').value = '';
-      document.getElementById('orderItems').value = '';
+      app.addOrder(id, raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean), name);
+      document.getElementById('orderName').value = document.getElementById('orderId').value = document.getElementById('orderItems').value = '';
       render();
-    });
-
-    // Pedido de ejemplo
-    addOrder('ORD-001', ['Hamburguesa', 'Papas fritas', 'Gaseosa'], 'Gabriel');
+    };
+    app.addOrder('ORD-001', ['Hamburguesa', 'Papas fritas', 'Gaseosa'], 'Gabriel');
     render();
   </script>
 </body>
